@@ -1,5 +1,5 @@
 from app import socketio
-from flask_socketio import emit, send, join_room
+from flask_socketio import emit, send, join_room, leave_room, rooms
 from flask import Blueprint, jsonify, request
 import random
 
@@ -12,7 +12,7 @@ rooms_api_blueprint = Blueprint('rooms_api',
 # def index():
 #     return
 
-rooms = []
+rooms_list = []
 
 def callback_response():
     return "Message was receive"
@@ -27,17 +27,17 @@ def on_connect():
 @socketio.on('create_room')
 def create_room():
     room_id = str(random.randint(1000,9999))
-    rooms.append(room_id)
+    rooms_list.append(room_id)
     join_room(room_id)
     print("Creating room")
     emit('get_room_id', {"room_id": room_id})
-    emit('broadcast_rooms', {"rooms": rooms})
+    emit('broadcast_rooms', {"rooms": rooms_list})
 
 
 @socketio.on('join_room')
 def join(data):
     room_id = data['room_id']
-    if room_id in rooms:
+    if room_id in rooms_list:
         join_room(room_id)
         emit('broadcast_num_ppl', room=room_id)
         emit('check_room_exist', {"valid": True})
@@ -91,3 +91,10 @@ def check_result(data):
             "restaurant_name": data['B']['restaurant_name']
         }
     emit('broadcast_result', result, room=data['room_id'])
+
+
+@socketio.on('disconnect')
+def disconnect():
+    print("One user disconnect")
+    print(rooms()[1])
+    emit('on_leave', room=rooms()[1])
