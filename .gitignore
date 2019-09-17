@@ -1,0 +1,6 @@
+.vscode
+*.DS_Store
+*__pycache__
+*.env
+foody_web/static/.webassets-cache
+foody_web/static/gen
