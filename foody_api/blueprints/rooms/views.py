@@ -15,7 +15,10 @@ rooms_list = []
 
 details_url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
 
+photo_url = 'https://maps.googleapis.com/maps/api/place/photo'
+
 key = Config.GOOGLE_API_KEY
+
 
 def callback_response():
     return "Message was receive"
@@ -59,7 +62,7 @@ def get_google_api(data):
     # get info from Google API
 
     details_payload = {"key": key, "location": f"{lat},{lng}",
-                    "radius": "1500", "types": ["restaurant", "food"]}
+                       "radius": "1500", "types": ["restaurant", "food"]}
 
     details_resp = requests.get(details_url, params=details_payload)
 
@@ -74,19 +77,33 @@ def get_google_api(data):
             if each_key == 'rating':
                 results_rating.append(item)
 
-    filtered_results_rating = list(filter(lambda x: x['user_ratings_total'] > 50, results_rating))
+    filtered_results_rating = list(
+        filter(lambda x: x['user_ratings_total'] > 50, results_rating))
 
-    sorted_results = sorted(filtered_results_rating, key = lambda i: i['rating'], reverse=True)
+    sorted_results = sorted(filtered_results_rating,
+                            key=lambda i: i['rating'], reverse=True)
 
     restaurants_list = []
 
     s = slice(rounds + 1)
     restaurants_list = sorted_results[s]
 
-    print(restaurants_list)
+    for each in restaurants_list:
+        photo_payload = {"key": key, "maxwidth": str(each['photos'][0]['width']), "photo_reference": each['photos'][0]['photo_reference']}
+
+        photo_resp = requests.get(photo_url, params=photo_payload)
+
+        each['photo_url'] = photo_resp.url
+
+
+    data = [
+        {"name": x['name'], "rating": x['rating'], "photo_url": x['photo_url']} for x in restaurants_list
+    ]
+
+    print(data)
 
     emit('check_start',  room=room)
-    emit('broadcast_restaurants', restaurants_list, room=room)
+    emit('broadcast_restaurants', data, room=room)
 
 
 @socketio.on('total_ppl')
