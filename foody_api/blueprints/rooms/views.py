@@ -26,7 +26,6 @@ def callback_response():
 
 @socketio.on('connect')
 def on_connect():
-    # print(data.msg)
     print("Server's connect")
     emit("connected", {"msg": "I'm from server",
                        "sid": request.sid}, broadcast=True)
@@ -38,6 +37,7 @@ def create_room():
     rooms_list.append(room_id)
     join_room(room_id)
     print("Creating room")
+    print(rooms_list)
     emit('get_room_id', {"room_id": room_id})
     emit('broadcast_rooms', {"rooms": rooms_list})
 
@@ -78,7 +78,7 @@ def get_google_api(data):
                 results_rating.append(item)
 
     filtered_results_rating = list(
-        filter(lambda x: x['user_ratings_total'] > 50, results_rating))
+        filter(lambda x: x['user_ratings_total'] > 200, results_rating))
 
     sorted_results = sorted(filtered_results_rating,
                             key=lambda i: i['rating'], reverse=True)
@@ -97,7 +97,7 @@ def get_google_api(data):
 
 
     data = [
-        {"name": x['name'], "rating": x['rating'], "photo_url": x['photo_url']} for x in restaurants_list
+        {"name": x['name'], "rating": x['rating'], "photo_url": x['photo_url'], "place_id": x['place_id'], "lat": x['geometry']['location']['lat'], "lng": x['geometry']['location']['lng']} for x in restaurants_list
     ]
 
     print(data)
@@ -142,5 +142,6 @@ def check_result(data):
 @socketio.on('disconnect')
 def disconnect():
     print("One user disconnect")
-    print(rooms()[1])
+    # print(rooms()[1])
+    # print(rooms_list)
     emit('on_leave', room=rooms()[1])
