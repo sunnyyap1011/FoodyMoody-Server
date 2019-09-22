@@ -78,7 +78,7 @@ def get_google_api(data):
                 results_rating.append(item)
 
     filtered_results_rating = list(
-        filter(lambda x: x['user_ratings_total'] > 100, results_rating))
+        filter(lambda x: x['user_ratings_total'] > 50, results_rating))
 
     sorted_results = sorted(filtered_results_rating,
                             key=lambda i: i['rating'], reverse=True)
