@@ -62,7 +62,7 @@ def get_google_api(data):
     # get info from Google API
 
     details_payload = {"key": key, "location": f"{lat},{lng}",
-                       "radius": "1500", "types": ["restaurant", "food"]}
+                       "radius": "3000", "types": ["restaurant", "food"]}
 
     details_resp = requests.get(details_url, params=details_payload)
 
