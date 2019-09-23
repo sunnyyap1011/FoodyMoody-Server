@@ -53,57 +53,57 @@ def join(data):
         emit('check_room_exist', {"valid": False})
 
 
-@socketio.on('conditions')
-def get_google_api(data):
-    lat = str(data['lat'])
-    lng = str(data['lng'])
-    rounds = int(data['rounds'])
-    room = data['room']
-    # get info from Google API
+# @socketio.on('conditions')
+# def get_google_api(data):
+#     lat = str(data['lat'])
+#     lng = str(data['lng'])
+#     rounds = int(data['rounds'])
+#     room = data['room']
 
-    details_payload = {"key": key, "location": f"{lat},{lng}",
-                       "radius": "3000", "types": ["restaurant", "food"]}
+#     # get info from Google API
+#     details_payload = {"key": key, "location": f"{lat},{lng}",
+#                        "radius": "3000", "types": ["restaurant", "food"]}
 
-    details_resp = requests.get(details_url, params=details_payload)
+#     details_resp = requests.get(details_url, params=details_payload)
 
-    details_json = details_resp.json()
+#     details_json = details_resp.json()
 
-    results = details_json['results']
+#     results = details_json['results']
 
-    results_rating = []
+#     results_rating = []
 
-    for item in results:
-        for each_key in item:
-            if each_key == 'rating':
-                results_rating.append(item)
+#     for item in results:
+#         for each_key in item:
+#             if each_key == 'rating':
+#                 results_rating.append(item)
 
-    filtered_results_rating = list(
-        filter(lambda x: x['user_ratings_total'] > 50, results_rating))
+#     filtered_results_rating = list(
+#         filter(lambda x: x['user_ratings_total'] > 50, results_rating))
 
-    sorted_results = sorted(filtered_results_rating,
-                            key=lambda i: i['rating'], reverse=True)
+#     sorted_results = sorted(filtered_results_rating,
+#                             key=lambda i: i['rating'], reverse=True)
 
-    restaurants_list = []
+#     restaurants_list = []
 
-    s = slice(rounds + 1)
-    restaurants_list = sorted_results[s]
+#     s = slice(rounds + 1)
+#     restaurants_list = sorted_results[s]
 
-    for each in restaurants_list:
-        photo_payload = {"key": key, "maxwidth": str(each['photos'][0]['width']), "photo_reference": each['photos'][0]['photo_reference']}
+#     for each in restaurants_list:
+#         photo_payload = {"key": key, "maxwidth": str(
+#             each['photos'][0]['width']), "photo_reference": each['photos'][0]['photo_reference']}
 
-        photo_resp = requests.get(photo_url, params=photo_payload)
+#         photo_resp = requests.get(photo_url, params=photo_payload)
 
-        each['photo_url'] = photo_resp.url
+#         each['photo_url'] = photo_resp.url
 
+#     data = [
+#         {"name": x['name'], "rating": x['rating'], "photo_url": x['photo_url'], "place_id": x['place_id'], "lat": x['geometry']['location']['lat'], "lng": x['geometry']['location']['lng']} for x in restaurants_list
+#     ]
 
-    data = [
-        {"name": x['name'], "rating": x['rating'], "photo_url": x['photo_url'], "place_id": x['place_id'], "lat": x['geometry']['location']['lat'], "lng": x['geometry']['location']['lng']} for x in restaurants_list
-    ]
+#     print(data)
 
-    print(data)
-
-    emit('check_start',  room=room)
-    emit('broadcast_restaurants', data, room=room)
+#     emit('check_start',  room=room)
+#     emit('broadcast_restaurants', data, room=room)
 
 
 @socketio.on('total_ppl')
@@ -145,3 +145,43 @@ def disconnect():
     # print(rooms()[1])
     # print(rooms_list)
     emit('on_leave', room=rooms()[1])
+
+
+@socketio.on('conditions')
+def get_zomato_api(data):
+    lat = str(data['lat'])
+    lng = str(data['lng'])
+    rounds = int(data['rounds'])
+    room = data['room']
+
+    zomato_url = 'https://developers.zomato.com/api/v2.1/geocode?lat=' + lat + '&lon=' + lng
+
+    print(zomato_url)
+
+    headers = {"user-key": 'b4073a8a5aadcf3500d69d4b861b218b'}
+
+    details_resp = requests.get(zomato_url, headers=headers)
+
+    details_json = details_resp.json()
+
+    results = details_json['nearby_restaurants']
+
+    restaurants_list = [
+        {"name": x['restaurant']['name'],
+         "rating": x['restaurant']['user_rating']['aggregate_rating'],
+         "photo_url": x['restaurant']['featured_image'],
+         "address": x['restaurant']['location']['address'],
+         "lat": x['restaurant']['location']['latitude'],
+         "lng": x['restaurant']['location']['longitude'],
+         "cuisines": x['restaurant']['cuisines'],
+         "price_range": x['restaurant']['price_range']
+         }
+        for x in results
+    ]
+
+    random.shuffle(restaurants_list)
+
+    data = restaurants_list[:rounds+1]
+
+    emit('check_start',  room=room)
+    emit('broadcast_restaurants', data, room=room)
