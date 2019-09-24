@@ -174,7 +174,8 @@ def get_zomato_api(data):
          "lat": x['restaurant']['location']['latitude'],
          "lng": x['restaurant']['location']['longitude'],
          "cuisines": x['restaurant']['cuisines'],
-         "price_range": x['restaurant']['price_range']
+         "price_range": x['restaurant']['price_range'],
+         "menu_url": x['restaurant']['menu_url']
          }
         for x in results
     ]
